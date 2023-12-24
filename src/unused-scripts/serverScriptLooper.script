@@ -1,0 +1,16 @@
+/* use this to activate a given script ONE TIME across all personal server
+	script name to run must be given as first arg 
+	desired threads as second arg
+	arguments to be passed as 3rd arg*/
+
+
+var servers = getPurchasedServers();
+
+for (var m = 0; m < servers.length; m++) {
+	if (args.length >2) {
+		exec(args[0], servers[m], args[1], args[2]);
+	}
+	else{
+		exec(args[0], servers[m], args[1]);
+	}
+}

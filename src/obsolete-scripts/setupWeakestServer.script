@@ -1,0 +1,49 @@
+/* assumes we must have root access to one server to root a deeper one*/
+
+var allServers = new Array();
+var rootServers = new Array();
+
+
+allServers = scan("home");
+
+for (var i = 0; i<allServers.length; i++) {
+	if (hasRootAccess(allServers[i])) {
+
+		if(allServers[i].substring(0,5) == "pserv") {
+			i = allServers.length;
+		}
+		else {
+			rootServers.push(allServers[i]);
+
+			if (scan(allServers[i]).length > 1) { //if more than one server is returned, there's a deeper server
+				serverRecursion(allServers[i]);
+			}
+		}
+		
+	}
+	
+}
+
+for (var j = 0; j<rootServers.length; j++) {
+	var moneyThresh = getServerMaxMoney(rootServers[j]) * 0.8;
+	var securityThresh = Math.round(getServerBaseSecurityLevel(rootServers[j]) / 3) + 5;
+	if ((getServerSecurityLevel(rootServers[j]) > securityThresh)  || (getServerMoneyAvailable(rootServers[j]) < moneyThresh)){
+		var threadsAvailable = Math.floor(getServerMaxRam(getHostname())/getScriptRam("distantHackLoop.script"));
+		spawn("distantHackLoop.script", threadsAvailable, rootServers[j]);
+	}
+}
+
+function serverRecursion(givenServer) {
+	var connectedServers = scan(givenServer);
+
+	for (var k = 1; k<connectedServers.length; k++) { //will skip first server returned, should be the higher server
+
+		if (hasRootAccess(connectedServers[k])){
+
+			rootServers.push(connectedServers[k]); // add found server to the list
+			serverRecursion(connectedServers[k]); // check new server connection
+
+		}
+
+	}
+}

@@ -1,0 +1,33 @@
+/* Should attempt to quickly root a new server
+* always use --tail!
+* pass hostname as arg */
+ports = getServerNumPortsRequired(args[0]);
+
+if (ports >= 5) {
+	sqlinject(args[0]);
+}
+
+if (ports >= 4) {
+	httpworm(args[0]);
+}
+
+if (ports >= 3) {
+	relaysmtp(args[0]);
+}
+
+if (ports >= 2) {
+	ftpcrack(args[0]);
+}
+
+if (ports >= 1) {
+	brutessh(args[0]);
+}
+
+
+nuke(args[0]);
+await scp("simpleHack.script", args[0]);
+await scp("simpleGrowth.script", args[0]);
+await scp("simpleWeaken.script", args[0]);
+await scp("simpleHack.js", args[0]);
+await scp("simpleGrowth.js", args[0]);
+await scp("simpleWeaken.js", args[0]);

@@ -1,0 +1,4 @@
+var startingBudget = args[0];
+
+run("stockBuyer.script", 1, args[0]);
+spawn("stockSeller.script", 1);

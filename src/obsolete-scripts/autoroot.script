@@ -1,0 +1,18 @@
+run("rootedServerList.script", 1)
+
+while (isRunning("rootedServerList.script")) {
+
+}
+
+var servers = read("rootableServers.txt").split(",");
+
+for (var i = 0; i < servers.length; i++) {
+	if (servers[i] != '') {
+		run("quickRootAttempt.script", 1, servers[i]);
+		run("massServerHack.js", 1, servers[i]);
+	}
+
+}
+
+rm("rootableServers.txt");
+tprint("Rooted all rootable servers.");

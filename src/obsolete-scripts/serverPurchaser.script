@@ -1,0 +1,38 @@
+export async function main(ns) {
+
+    var ram = ns.args[0] //pass server ram as an argument
+
+    // Iterator we'll use for our loop
+    var i = ns.getPurchasedServers().length;
+
+
+    while (i < ns.getPurchasedServerLimit() && (ns.getServerMoneyAvailable("home") > ns.getPurchasedServerCost(ram))) {
+        var hostname = purchaseServer("pserv-" + i, ram);
+
+        await ns.scp("simpleHack.js", hostname);
+        await ns.scp("simpleGrowth.js", hostname);
+        await ns.scp("simpleWeaken.js", hostname);
+
+        /*
+        if (ns.args.length == 2) {
+            await scp(args[1], hostname);
+            exec(args[1], hostname, 1);
+        }
+
+        else if (args.length == 3) {
+            await scp(args[1], hostname);
+            exec(args[1], hostname, args[2]);
+        }
+
+        else if (args.length == 4) {
+            await scp(args[1], hostname);
+            exec(args[1], hostname, args[2], args[3]); //pass multiple args as one string, perhaps?
+        }
+        */
+
+        ++i;
+    }
+
+    ns.tprint("Servers purchased: " + (i));
+
+}

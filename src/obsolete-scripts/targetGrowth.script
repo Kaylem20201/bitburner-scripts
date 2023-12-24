@@ -1,0 +1,8 @@
+/*A cheap script to spam low cost servers with*/
+
+var target = args[0];
+var moneyThresh = getServerMaxMoney(target) * 0.9;
+
+while (getServerMoneyAvailable(target) < moneyThresh) {
+	grow(target);
+}

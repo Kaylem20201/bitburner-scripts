@@ -1,0 +1,37 @@
+/*if (stockSymbolConvert(args[0]) == "") {
+	grow(args[0]);
+}
+else if (stock.getPosition(stockSymbolConvert(args[0]))[0] != 0) {
+	grow(args[0], true);
+}
+
+else {*/
+	grow(args[0]);
+//}
+
+
+
+
+
+function stockSymbolConvert(serverName) {
+
+	switch(serverName) {
+		case "foodnstuff" :
+			return "FNS";
+		case "omega-software" :
+			return "OMGA";
+		case "sigma-cosmetics" :
+			return "SGC";
+		case "comptek" :
+			return "CTK";
+		case "catalyst" :
+			return "CTYS";
+		case "netlink" :
+			return "NTLK";
+		case "joesguns" :
+			return "JGN";
+		default:
+			return "";
+	}
+
+}

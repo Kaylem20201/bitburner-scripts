@@ -1,0 +1,32 @@
+/* This script will manage the buying and selling of ONE SYMBOL passed as first arg
+	Second arg will be a PER STOCK budget*/
+
+
+var ownStock = false;
+
+var tempShares;
+
+
+while (true){
+	//buy phase
+	while (ownStock == false) {
+		print(stock.getForecast(args[0]));
+		if (stock.getForecast(args[0]) > .6) {
+			tempShares = Math.floor(args[1]/stock.getAskPrice(args[0]));
+			if(stock.buy(args[0], tempShares) != 0) {
+				ownStock = true;
+			}
+		}
+	}
+
+
+	//sell phase
+	while (ownStock==true) {
+		if (stock.getForecast(args[0]) <.5) {
+			stock.sell(args[0], stock.getMaxShares(args[0]));
+			ownStock = false;
+		}
+	}
+
+
+}

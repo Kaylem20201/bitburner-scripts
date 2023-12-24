@@ -1,0 +1,8 @@
+var target = args[0];
+securityThresh = Math.round(getServerBaseSecurityLevel(target) / 3) + 2;
+
+
+while (getServerSecurityLevel(target) > securityThresh) {
+        // If the server's security level is above our threshold, weaken it
+        weaken(target);
+	}

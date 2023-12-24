@@ -1,0 +1,39 @@
+var GANGS = gang.getOtherGangInformation();
+var OUR_GANG = gang.getGangInformation();
+print(GANGS.keys());
+
+/*
+
+while (gang.inGang()) {
+	clashCheck();
+}
+
+
+
+
+function clashCheck() {
+	var gangObject = gang.getOtherGangInformation();
+	var THRESHOLD = .60;
+	var temp;
+
+	// calculate average
+	var sum = 0;
+
+	for (var i = 0; i < GANGS.length(); i++) {
+		if (element.territory > 0) {
+			sum += gang.getChanceToWinClash(element)
+			print(sum);
+		}
+	}
+
+	sum /= 6.0;
+	print(sum);
+	if (sum > THRESHOLD) {
+		gang.setTerritoryWarfare(true);
+	}
+	else {
+		gang.setTerritoryWarfare(false);
+	}
+
+}
+*/

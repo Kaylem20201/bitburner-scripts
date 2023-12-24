@@ -1,0 +1,35 @@
+var rootedServers = read("rootedServers.txt").split(",");
+var contractsFound = new Array;
+
+var contractType;
+
+var temp;
+
+
+for (var i = 0; i < rootedServers.length; i++) {
+
+	temp = ls(rootedServers[i], ".cct");
+	if (temp[0] != undefined) {
+		contractsFound.push(temp[0]);
+	}
+
+	for (var j = 0; j < contractsFound.length; j++) {
+
+		if (contractsFound[j] == undefined) {
+
+		} else {
+			contractType = codingcontract.getContractType(contractsFound[j], rootedServers[i]);
+			if (contractType == "Find Largest Prime Factor") {
+				run("findLargestPrimeNumber.script", 1, contractsFound[j], rootedServers[i]);
+			} else if (contractType == "Subarray with Maximum Sum") {
+				run("subarrayWithLargestSum.script", 1, contractsFound[j], rootedServers[i]);
+			} else if (contractType == "Generate IP Addresses") {
+				run("generateIpAddresses", 1, contractsFound[j], rootedServers[i]);
+			} 
+			else {
+				tprint(rootedServers[i] + ": " + contractsFound[j] + ": " + codingcontract.getContractType(contractsFound[j], rootedServers[i]));
+			}
+		}
+	}
+	contractsFound = [];
+}
