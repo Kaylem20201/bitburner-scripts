@@ -1,8 +1,10 @@
+import { NS } from '@ns';
+
 /**
  * returns a list of all server names
  * @param {NS} ns - ns namespace
  */
-export function getAllServers(ns) {
+export function getAllServers(ns : NS) {
 	const servers = ['home'];
 	servers.push(...ns.scan('home'));
 	ns.print(servers);
@@ -15,4 +17,18 @@ export function getAllServers(ns) {
 		}
 	}
 	return servers;
+}
+
+/**
+ * Calculates the amount of threads available for a script,
+ * given an amount of ram and the script cost
+ * 
+ * @param availableRam Ram available for script to run on
+ * @param scriptCost The ram cost of running the script on one thread
+ * @returns Max number of threads the script can run on
+ */
+export function getThreadsAvailable(availableRam : number, scriptCost : number) : number {
+	
+	return Math.floor(availableRam / scriptCost);
+
 }
