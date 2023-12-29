@@ -19,14 +19,38 @@ function mainLoop(ns: NS, targets: string[]): void {
     let ramAvailable = ramBudget;
 
     for (const target of targets) {
+
         //Weaken server
         const weakenObject = weakenToLimit(ns, ramAvailable, target);
         ramAvailable = ramAvailable-weakenObject.ramUsed;
         if (!weakenObject.fullyWeakened) continue;
 
         //Grow server
+        const growObject = growToLimit(ns, ramAvailable, target);
+        ramAvailable = ramAvailable-growObject.ramUsed;
+        if (!growObject.fullyGrown) continue;
+
+        //Weaken server again
+        const weakenObject2 = weakenToLimit(ns, ramAvailable, target);
+        ramAvailable = ramAvailable-weakenObject2.ramUsed;
+        if (!weakenObject2.fullyWeakened) continue;
+
+        //Server fully grown and weakened, ready for batch;
         
     }
+
+}
+
+/**
+ * Analyzes what is needed to batch HWG scripts on a target server
+ * 
+ * @returns Total ram needed for one set of batch operations
+ */
+function analyzeBatch(ns: NS, target : string) : number {
+    const WEAKEN_SCRIPT = 'batch-scripts/weakenTarget.js';
+    const GROW_SCRIPT = 'batch-scripts/growTarget.js';
+    const HACK_SCRIPT = 'batch-scripts/hackTarget.js';
+
 
 }
 
