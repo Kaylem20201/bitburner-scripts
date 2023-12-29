@@ -1,10 +1,12 @@
 import { NS } from "@ns";
 
 /**
- * 
- * 
+ * Looping script that runs batch operations on a target indefinitely
  */
-export async function main(ns: NS, target : string): Promise<void> {
+export async function main(ns: NS): Promise<void> {
+
+    const target = ns.args[0];
+    if (typeof target !== "string") throw new Error('Invalid "target" argument.');
     
     const WEAKEN_SCRIPT = 'batch-scripts/weakenTarget.js';
     const GROW_SCRIPT = 'batch-scripts/growTarget.js';
