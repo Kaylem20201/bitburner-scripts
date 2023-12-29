@@ -1,7 +1,7 @@
 import { NS } from "@ns";
 
 /**
- * Looping script that runs batch operations on a target indefinitely
+ * Looping script that runs batch operations on a target indefinitely.
  */
 export async function main(ns: NS): Promise<void> {
 
@@ -21,11 +21,11 @@ export async function main(ns: NS): Promise<void> {
 
     const weaken1ThreadsNeeded = Math.ceil(hackSecurityIncrease / 0.05);
     const homeCores = ns.getServer('home').cpuCores;
-    const growThreadsNeeded = ns.growthAnalyze(
+    const growThreadsNeeded = Math.ceil(ns.growthAnalyze(
         target,
         ns.getServerMaxMoney(target) / (ns.getServerMaxMoney(target)- moneyRemoved),
         homeCores
-    );
+    ));
     const growSecurityIncrease = ns.growthAnalyzeSecurity(
         growThreadsNeeded,
         target,
@@ -61,19 +61,37 @@ export async function main(ns: NS): Promise<void> {
     const adjustedTimes: {time : number, type: string}[] = [];
     const timeAdjustment = Math.min(weaken1StartTime, weaken2StartTime, growStartTime, hackStartTime);
     for (const rawTime of rawTimes) {
-        adjustedTimes.push({time: rawTime.time-timeAdjustment, type: rawTime.type});
+        adjustedTimes.push({time: Math.ceil(rawTime.time-timeAdjustment), type: rawTime.type});
     }
+
+    ns.print('Times: ');
+    for (const time of adjustedTimes) ns.print(time.time + ',' + time.type);
+    ns.print('Threads: ');
+    ns.print('Weaken1: ' + weaken1ThreadsNeeded);
+    ns.print('Weaken2: ' + weaken2ThreadsNeeded);
+    ns.print('Grow: ' + growThreadsNeeded);
+    ns.print('Hack: ' + 1); 
     
     while(true) {
         for(let i = 0; i < adjustedTimes.length; i++) {
-            if (adjustedTimes[i].type === 'weaken1') ns.exec(WEAKEN_SCRIPT, hostname, weaken1ThreadsNeeded);
-            if (adjustedTimes[i].type === 'weaken2') ns.exec(WEAKEN_SCRIPT, hostname, weaken2ThreadsNeeded);
-            if (adjustedTimes[i].type === 'hack') ns.exec(HACK_SCRIPT, hostname, 1);
-            if (adjustedTimes[i].type === 'grow') ns.exec(GROW_SCRIPT, hostname, growThreadsNeeded);
+            if (adjustedTimes[i].type === 'weaken1') ns.exec(WEAKEN_SCRIPT, hostname, weaken1ThreadsNeeded, target);
+            if (adjustedTimes[i].type === 'weaken2') ns.exec(WEAKEN_SCRIPT, hostname, weaken2ThreadsNeeded, target);
+            if (adjustedTimes[i].type === 'hack') ns.exec(HACK_SCRIPT, hostname, 1, target);
+            if (adjustedTimes[i].type === 'grow') ns.exec(GROW_SCRIPT, hostname, growThreadsNeeded, target);
             if (i < adjustedTimes.length-1) await ns.sleep(adjustedTimes[i+1].time-adjustedTimes[i].time);
         }
 
         await ns.sleep(SCRIPT_GAP);
     }
+
+}
+
+/**
+ * Calculates the maximum amount of ram that a one thread batch script
+ * can use up at a time
+ * @param ns 
+ * @returns The maximum 
+ */
+export function maxRamUsedByBatch(ns: NS) : number {
 
 }

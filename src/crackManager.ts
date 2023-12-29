@@ -7,6 +7,10 @@ import { getAllServers } from "util";
 
 export async function main(ns: NS): Promise<void> {
 
+	/**
+	 * Checks files on 'home' to create a list of currently available cracks
+	 * @returns Array containing strings of the available cracks
+	 */
 	function getListOfCracks() {
 		const cracksFull = [
 			"FTPCrack.exe",
