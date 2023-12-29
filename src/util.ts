@@ -32,3 +32,14 @@ export function getThreadsAvailable(availableRam : number, scriptCost : number) 
 	return Math.floor(availableRam / scriptCost);
 
 }
+
+/**
+ * Checks to see if the Formulas API is available
+ * 
+ * @param Netscript namespace
+ * @returns True if Formulas is available, false otherwise
+ */
+export function isFormulasAvailable(ns : NS) : boolean {
+	const formulasAvailable : boolean = (ns.ls('home','Formulas.exe').length > 0);
+	return formulasAvailable;
+}
