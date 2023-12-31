@@ -32,7 +32,7 @@ export async function main(ns: NS): Promise<void> {
 	//Main loop
 	while (true) {
 		for (const server of servers) {
-			if (!ns.hasRootAccess) {
+			if (!ns.hasRootAccess(server)) {
 				const cracks = getListOfCracks();
 				const portsNeeded = ns.getServerNumPortsRequired(server);
 				if (cracks.length < portsNeeded) {

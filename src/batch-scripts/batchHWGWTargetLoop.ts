@@ -5,7 +5,6 @@ const GROW_SCRIPT = 'batch-scripts/growTarget.js';
 const HACK_SCRIPT = 'batch-scripts/hackTarget.js';
 const SCRIPT_GAP = 5000 // millisecond gap to put between scripts
 
-
 /**
  * Looping script that runs batch operations on a target indefinitely.
  * Flags:
