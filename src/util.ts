@@ -1,5 +1,8 @@
 import { NS } from '@ns';
 
+const GROW_SCRIPT = 'batch-scripts/growTarget.js';
+const WEAKEN_SCRIPT = 'batch-scripts/weakenTarget.js';
+
 /**
  * returns a list of all server names
  * @param {NS} ns - ns namespace
@@ -30,6 +33,27 @@ export function getAllServers(ns : NS) {
 export function getThreadsAvailable(availableRam : number, scriptCost : number) : number {
 	
 	return Math.floor(availableRam / scriptCost);
+
+}
+
+/**
+ * Function to calculate the number of growth threads needed to grow a server to max money.
+ * @param ns netscript
+ * @param target target hostname
+ * @param hostname host hostname
+ * @returns number of threads needed to grow target to max money
+ */
+export function growAnalyzePrep(ns : NS, target : string, hostname : string) : {
+	threadsNeeded : number,
+	securityIncrease : number
+}	{
+
+    const growthFactorNeeded = ns.getServerMaxMoney(target)/ns.getServerMoneyAvailable(target);
+    const cores = ns.getServer(hostname).cpuCores;
+    const growThreadsNeeded = Math.max(1,Math.ceil(ns.growthAnalyze(target,growthFactorNeeded,cores)));
+	const growSecurityIncrease = ns.growthAnalyzeSecurity(growThreadsNeeded, target, cores);
+
+	return {threadsNeeded : growThreadsNeeded, securityIncrease : growSecurityIncrease};
 
 }
 

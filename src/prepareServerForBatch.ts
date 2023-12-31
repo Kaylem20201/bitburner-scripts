@@ -3,7 +3,19 @@ import * as util from "util";
 
 const GROW_SCRIPT = 'batch-scripts/growTarget.js';
 const WEAKEN_SCRIPT = 'batch-scripts/weakenTarget.js';
+const SCRIPT_GAP = 5000 // millisecond gap to put between scripts
 
+interface PreparationInfo {
+    ramUsed : number,
+    fullyWeakened? : boolean,
+    fullyGrown? : boolean,
+    waitTime : number
+}
+
+/**
+ * Prepares a server for batch operations by making sure
+ * it is fully weakened and grown.
+ */
 export async function main(ns: NS): Promise<void> {
 
     if (ns.args.length < 0 || typeof ns.args[0] !== 'string') {
@@ -12,28 +24,90 @@ export async function main(ns: NS): Promise<void> {
         ns.exit();
     }
     
+    let hostname = 'home'
+    let hostnameArgIndex = ns.args.indexOf('-h');
+    if (hostnameArgIndex !== -1) {
+        //Hostname flag
+        const rawArgument = ns.args[hostnameArgIndex+1];
+        if (typeof rawArgument !== 'string') { throw new Error('Invalid hostname argument'); }
+        hostname = rawArgument;
+    }
+    
     const target = ns.args[0];
     let ramAvailable = getRamBudget(ns);
     let weakenPhase = true;
 
     while (!isPrepared(ns,target)) {
-        const prepInfo = 
-            (weakenPhase)
-            ? weakenToLimit(ns, ramAvailable, target) 
-            : growToLimit(ns, ramAvailable, target);
-        if (ns.getServerSecurityLevel(target) !== ns.getServerMinSecurityLevel(target)) {
-            weakenPhase = true;
-            await ns.sleep(prepInfo.waitTime);
-            continue;
+        let prepInfo : PreparationInfo;
+        let waitTime : number;
+        if (weakenPhase) {
+            prepInfo = weakenToLimit(ns, ramAvailable, target);
+            waitTime = prepInfo.waitTime;
+            weakenPhase = !(ns.getServerSecurityLevel(target) === ns.getServerMinSecurityLevel(target));
         }
-        weakenPhase = false;
+        else {
+            waitTime = await growAndWeakenCombo(ns, ramAvailable, target, hostname)
+        }
 
-        await ns.sleep(prepInfo.waitTime);
+        await ns.sleep(waitTime);
     }
 
     ns.toast("Server " + target + "fully grown and weakened, ready for batch", "success",5000);
     ns.print("Server " + target + "fully grown and weakened, ready for batch");
     ns.exit();
+
+}
+
+/**
+ * 
+ * @param ns Netscript
+ * @param ramAvailable Ram available for scripts to use
+ * @param target 
+ * @param hostname 
+ * @returns Full execution time in milliseconds
+ */
+async function growAndWeakenCombo(ns: NS, ramAvailable : number, target : string, hostname : string = 'home') : Promise<number> {
+
+    const growStartTime = 0;
+    const growFinishTime = ns.getGrowTime(target);
+    const weakenFinishTime = growFinishTime + SCRIPT_GAP;
+    const weakenStartTime = weakenFinishTime - ns.getWeakenTime(target);
+
+    const rawTimes = [
+        { time : growStartTime, type : 'grow' },
+        { time : weakenStartTime, type : 'weaken' }
+    ];
+
+    //Adjust start times to start at zero
+    let adjustedTimes: { time: number, type: string }[] = [];
+    const timeAdjustment = Math.min(...rawTimes.map( (ele) => ele.time));
+    for (const rawTime of rawTimes) {
+        adjustedTimes.push({ time: Math.ceil(rawTime.time - timeAdjustment), type: rawTime.type });
+    }
+
+    const growScriptCost = ns.getScriptRam(GROW_SCRIPT);
+    const growPrepAnalysis = util.growAnalyzePrep(ns, target, hostname);
+    const growThreadsNeeded = growPrepAnalysis.threadsNeeded;
+    const growThreadsAvailable = util.getThreadsAvailable(ramAvailable, growScriptCost);
+    const growThreads = Math.min(growThreadsNeeded, growThreadsAvailable);
+    const growSecurityIncrease = growPrepAnalysis.securityIncrease;
+
+    const ramAvailableAfterGrowth = (ramAvailable - (growScriptCost * growThreads));
+    const weakenScriptCost = ns.getScriptRam(WEAKEN_SCRIPT);
+    const weakenThreadsNeeded = Math.max(1,Math.ceil(growSecurityIncrease/.05));
+    const weakenThreadsAvailable = util.getThreadsAvailable(ramAvailableAfterGrowth, weakenScriptCost);
+    const weakenThreads = Math.min(weakenThreadsAvailable, weakenThreadsNeeded);
+
+    if (weakenThreads === 0) adjustedTimes = adjustedTimes.filter( (timeObj) => timeObj.type !== 'weaken');
+    if (growThreads === 0) adjustedTimes = adjustedTimes.filter( (timeObj) => timeObj.type !== 'grow');
+    
+    for (let i = 0; i < adjustedTimes.length; i++) {
+        if (adjustedTimes[i].type === 'weaken') { ns.exec(WEAKEN_SCRIPT, hostname, weakenThreads, target); }
+        if (adjustedTimes[i].type === 'grow') { ns.exec(GROW_SCRIPT, hostname, growThreads, target); }
+        if (i < adjustedTimes.length - 1) await ns.sleep(adjustedTimes[i + 1].time - adjustedTimes[i].time);
+    }
+
+    return Math.max(growFinishTime, weakenFinishTime);
 
 }
 
@@ -59,16 +133,9 @@ function getRamBudget(ns: NS): number {
     const homeRamBudget = Math.max(maxHomeRam * HOME_BUDGET, availableHomeRam);
 
     const result = homeRamBudget;
-    ns.print('Ram Budget: %d', homeRamBudget);
+    ns.print('Ram Budget: ', homeRamBudget);
     return homeRamBudget;
 
-}
-
-interface PreparationInfo {
-    ramUsed : number,
-    fullyWeakened? : boolean,
-    fullyGrown? : boolean,
-    waitTime : number
 }
 
 /**
@@ -144,3 +211,18 @@ function growToLimit(ns: NS, ramAvailable: number, target: string): PreparationI
     return { ramUsed: ramUsed, fullyGrown: growthThreadsWanted === threadsToUse, waitTime : ns.getGrowTime(target)};
 
 }
+
+/*function maxGrowthWithinRam(ns : NS, ramAvailable : number, target : string, hostname : string = 'home') {
+
+    const growScriptCost = ns.getScriptRam(GROW_SCRIPT, 'home');
+    const cores = ns.getServer(hostname).cpuCores;
+    const maxGrowthFactor = ns.getServerMaxMoney(target) / ns.getServerMoneyAvailable(target);
+    const growthThreadsWanted = Math.ceil(ns.growthAnalyze(target, maxGrowthFactor, cores));
+    const growthThreadsAvailable = util.getThreadsAvailable(ramAvailable, growScriptCost);
+
+    const threadsToUse = Math.min(growthThreadsAvailable, growthThreadsWanted);
+
+    return ns.growthAnalyzeSecurity
+
+
+}*/

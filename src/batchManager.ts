@@ -42,63 +42,6 @@ function mainLoop(ns: NS, targets: string[]): void {
 
 }
 
-interface BatchAnalysis {
-    ramNeeded: number //Ram needed for one set of batch ops
-    revenue: number //mone made from one set of batch ops
-    timeNeeded: number //Time (in ms) needed to complet a set of batch ops
-}
-
-/**
- * Analyzes batch HWGW operations on a target server
- * 
- * @returns BatchAnalysis object
- */
-function analyzeBatchRam(ns: NS, target : string) : number {
-
-    const WEAKEN_SCRIPT = 'batch-scripts/weakenTarget.js';
-    const GROW_SCRIPT = 'batch-scripts/growTarget.js';
-    const HACK_SCRIPT = 'batch-scripts/hackTarget.js';
-
-    const hackRamCost = ns.getScriptRam(HACK_SCRIPT);
-    const hackSecurityIncrease = ns.hackAnalyzeSecurity(1, target);
-    const moneyRemoved = ns.hackAnalyze(target);
-
-    const weaken1ThreadsNeeded = Math.ceil(hackSecurityIncrease / 0.05);
-    const homeCores = ns.getServer('home').cpuCores;
-    const growThreadsNeeded = ns.growthAnalyze(
-        target,
-        ns.getServerMaxMoney(target) / (ns.getServerMaxMoney(target)- moneyRemoved),
-        homeCores
-    );
-    const growSecurityIncrease = ns.growthAnalyzeSecurity(
-        growThreadsNeeded,
-        target,
-        homeCores
-    );
-    const weaken2ThreadsNeeded = Math.ceil(growSecurityIncrease / 0.05);
-
-
-    const weakenRamCost = ns.getScriptRam(WEAKEN_SCRIPT);
-    const growRamCost = ns.getScriptRam(GROW_SCRIPT);
-
-    const totalRamNeeded = (weaken1ThreadsNeeded*weakenRamCost)
-         + (weaken2ThreadsNeeded*weakenRamCost) 
-         + (growThreadsNeeded*growRamCost) 
-         + hackRamCost;
-
-    const revenue = ns.hackAnalyze(target);
-
-    const weakenTime = ns.getWeakenTime(target);
-    const growTime = ns.getGrowTime(target);
-    const hackTime = ns.getHackTime(target);
-
-    //TODO: this is wrong, come back to this after writing batch operation
-    const maxTimeInMS = Math.max(weakenTime, growTime, hackTime);
-
-    return totalRamNeeded;
-
-}
-
 /**
  * Spawns weaken scripts on target server. Will either
  * spawn as many threads as it can with the ram given, 
