@@ -38,7 +38,7 @@ export async function main(ns: NS): Promise<void> {
     )));
     const growSecurityIncrease = ns.growthAnalyzeSecurity(
         growThreadsNeeded,
-        target,
+        undefined,
         homeCores
     );
     const weaken2ThreadsNeeded = Math.max(1, Math.ceil(growSecurityIncrease / 0.05));
@@ -50,7 +50,7 @@ export async function main(ns: NS): Promise<void> {
         weaken2Threads : weaken2ThreadsNeeded
     }
 
-    mainLoop(ns, target, threads, hostname);
+    await mainLoop(ns, target, threads, hostname);
     ns.exit();
 
 
@@ -151,7 +151,7 @@ export function threadsNeededForMaxMoney(ns: NS, target: string, hostname?: stri
     if (hostname !== undefined) cores = ns.getServer(hostname).cpuCores;
     else cores = ns.getServer('home').cpuCores;
     const growThreads = Math.ceil(ns.growthAnalyze(target, 2, cores));
-    const growSecurityIncrease = ns.growthAnalyzeSecurity(growThreads, target, cores);
+    const growSecurityIncrease = ns.growthAnalyzeSecurity(growThreads, undefined, cores);
     const weaken2Threads = Math.max(1,Math.ceil(growSecurityIncrease / 0.05));
 
     return {

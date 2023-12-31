@@ -47,6 +47,7 @@ export async function main(ns: NS): Promise<void> {
         }
         else {
             waitTime = await growAndWeakenCombo(ns, ramAvailable, target, hostname)
+            weakenPhase = !(ns.getServerSecurityLevel(target) === ns.getServerMinSecurityLevel(target));
         }
 
         await ns.sleep(waitTime);

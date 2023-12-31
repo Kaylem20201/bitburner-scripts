@@ -51,7 +51,7 @@ export function growAnalyzePrep(ns : NS, target : string, hostname : string) : {
     const growthFactorNeeded = ns.getServerMaxMoney(target)/ns.getServerMoneyAvailable(target);
     const cores = ns.getServer(hostname).cpuCores;
     const growThreadsNeeded = Math.max(1,Math.ceil(ns.growthAnalyze(target,growthFactorNeeded,cores)));
-	const growSecurityIncrease = ns.growthAnalyzeSecurity(growThreadsNeeded, target, cores);
+	const growSecurityIncrease = ns.growthAnalyzeSecurity(growThreadsNeeded, undefined, cores);
 
 	return {threadsNeeded : growThreadsNeeded, securityIncrease : growSecurityIncrease};
 

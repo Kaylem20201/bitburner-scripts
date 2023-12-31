@@ -20,7 +20,7 @@ export async function main(ns: NS): Promise<void> {
 			"SQLInject.exe"
 		];
 		const cracks = ns.ls("home").filter((filename) => {
-			cracksFull.includes(filename);
+			return cracksFull.includes(filename);
 		});
 		return cracks;
 	}
@@ -36,15 +36,12 @@ export async function main(ns: NS): Promise<void> {
 				const cracks = getListOfCracks();
 				const portsNeeded = ns.getServerNumPortsRequired(server);
 				if (cracks.length < portsNeeded) {
-					break;
+					continue;
 				}
 				//Nuke the server
 				const res = await crackAndNukeServer(ns, cracks, server, portsNeeded);
 				if (!res) ns.exit();
-				ns.print("Access granted on %s", server);
-
-				//Always: collect contracts
-				ns.scp(ns.ls(server, '.cct'), 'home', server);
+				ns.print("Access granted on ", server);
 
 				//TODO: Trigger batch hacking
 			}
