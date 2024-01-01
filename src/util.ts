@@ -4,6 +4,69 @@ const GROW_SCRIPT = 'batch-scripts/growTarget.js';
 const WEAKEN_SCRIPT = 'batch-scripts/weakenTarget.js';
 
 /**
+ * Debugging tool
+ */
+export class Debug {
+	active : boolean = false;
+	logging : boolean = false;
+	readonly ns : NS;
+
+	constructor(ns : NS) {
+		this.ns = ns;
+	}
+
+	/**
+	 * Activate debug mode.
+	 * @remarks
+	 * Spawns a tail window and sets 'active' to true.
+	 * Initializing NS object
+	 * 
+	 */
+	activate(...opts : string[]) : void {
+        this.active = true;
+        this.ns.tail();
+        this.print("Debugging mode active.");
+		if(opts.includes('logs')) { this.logging = true; }
+	}
+
+	/**
+	 * Deactivates debug mode
+	 */
+	deactivate() : void {
+		this.active = false;
+		this.ns.print("Debugging deactivated");
+		if(this.logging) { this.log(); }
+	}
+
+	/**
+	 * Prints only if debugging is active
+	 * @param args Arguments to print
+	 */
+	print(...args : any[]) : void {
+		if (this.active) { this.ns.print(...args) };
+	}
+
+	log() : string {
+		const scriptInfo = this.ns.getRunningScript();
+		if (scriptInfo === null) throw new Error();
+		const filename = 'logs/debugLog' + scriptInfo.filename + scriptInfo.pid;
+		this.ns.write(
+			filename,
+			...this.ns.getScriptLogs(scriptInfo.pid)
+		);
+		return filename;
+	}
+
+	error(errorArg : Error) {
+		if (this.logging) { 
+			const filename = this.log();
+			errorArg.message = errorArg.message + '\nLogs at:' + filename;
+		}
+		throw errorArg;
+	}
+}
+
+/**
  * returns a list of all server names
  * @param {NS} ns - ns namespace
  */
