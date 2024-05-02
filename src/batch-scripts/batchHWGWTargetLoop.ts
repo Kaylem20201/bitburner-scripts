@@ -1,17 +1,12 @@
 import { NS } from "@ns";
-import { Debug } from 'util';
 import { HWGWTimings } from "batch-scripts/interfaces";
 import { HWGWThreads } from "batch-scripts/interfaces";
 import { SCRIPT_GAP } from "/constantDefinitions";
-
-let debug : Debug;
 
 /**
  * Looping script that runs batch operations on a target indefinitely.
  * Flags:
  *  -M : Batch for maximum money on the target server.
- *  -d : Activate debugging mode
- *  -l : Save logs (only works in debug mode)
  */
 export async function main(ns: NS): Promise<void> {
 
@@ -19,21 +14,8 @@ export async function main(ns: NS): Promise<void> {
     if (typeof target !== "string") throw new Error('Invalid "target" argument.');
     const hostname = ns.getHostname();
 
-    //Debug mode.
-    if (ns.args.includes('-d')) {
-        debug = new Debug(ns);
-        if (ns.args.includes('-l')) debug.logging = true;
-        debug.activate();
-    }
-
     const threads = threadsNeededForMaxMoney(ns, target, hostname);
     const timings = getBatchTimings(ns, target, hostname);
-    debug.print(
-        "Threads to use each loop :",
-        threads,
-        "\nTimings to use each loop :",
-        timings
-    );
     while (true) {
         const pid = ns.exec(
             'batch-scripts/batchTarget.js',
@@ -43,17 +25,12 @@ export async function main(ns: NS): Promise<void> {
             JSON.stringify(threads),
             JSON.stringify(timings),
             hostname,
-            (debug.active) ? '-debug' : ''
         );
-        debug.print("Executing script :" + pid);
         //Wait so the second set of batch ops start finishing after all of the first
         const lastTime = timings.finishTimes.at(-1)?.time;
         const firstTime = timings.finishTimes.at(0)?.time;
-        debug.print('firstTime :' + firstTime);
-        debug.print('lastTime :' + lastTime);
         if ((lastTime === undefined) || (firstTime === undefined)) { throw new Error('Error with timings calculation'); }
         const timeDifference = lastTime - firstTime;
-        debug.print('timeDifference :' + timeDifference);
         await ns.sleep(timeDifference + SCRIPT_GAP);
     }
 

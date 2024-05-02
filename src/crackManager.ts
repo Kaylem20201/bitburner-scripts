@@ -10,7 +10,7 @@ export async function main(ns: NS): Promise<void> {
 	/**
 	 * Checks files on 'home' to create a list of currently available cracks
 	 * @returns Array containing strings of the available cracks
-	 */
+	*/
 	function getListOfCracks() {
 		const cracksFull = [
 			"FTPCrack.exe",
@@ -60,7 +60,7 @@ export async function main(ns: NS): Promise<void> {
  * @param portNum Number of 
  * @returns 
  */
-async function crackAndNukeServer(ns : NS, cracks: string[], target: string, portNum: number): Promise<boolean> {
+async function crackAndNukeServer(ns: NS, cracks: string[], target: string, portNum: number): Promise<boolean> {
 	for (let i = 0; i < portNum; i++) {
 		const crack = cracks.pop();
 		switch (crack) {
