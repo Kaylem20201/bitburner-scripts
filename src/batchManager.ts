@@ -1,9 +1,11 @@
-import { NS } from "@ns";
+import { NS, Server } from "@ns";
+import { HWGWThreads } from "./batch-scripts/interfaces";
+import { WEAKEN_THREADS_PER_GROW_THREAD, WEAKEN_THREADS_PER_HACK_THREAD } from "./constantDefinitions";
 import * as util from "./util";
 
 export async function main(ns: NS): Promise<void> {
 
-    const allServers : string[] = util.getAllServers(ns);
+    const allServers: string[] = util.getAllServers(ns);
 
     while (true) {
         const targets = allServers.filter((serverName) => ns.hasRootAccess(serverName));
@@ -22,22 +24,21 @@ function mainLoop(ns: NS, targets: string[]): void {
 
         //Weaken server
         const weakenObject = weakenToLimit(ns, ramAvailable, target);
-        ramAvailable = ramAvailable-weakenObject.ramUsed;
+        ramAvailable = ramAvailable - weakenObject.ramUsed;
         if (!weakenObject.fullyWeakened) continue;
 
         //Grow server
         const growObject = growToLimit(ns, ramAvailable, target);
-        ramAvailable = ramAvailable-growObject.ramUsed;
+        ramAvailable = ramAvailable - growObject.ramUsed;
         if (!growObject.fullyGrown) continue;
 
         //Weaken server again
         const weakenObject2 = weakenToLimit(ns, ramAvailable, target);
-        ramAvailable = ramAvailable-weakenObject2.ramUsed;
+        ramAvailable = ramAvailable - weakenObject2.ramUsed;
         if (!weakenObject2.fullyWeakened) continue;
 
         //Server fully grown and weakened, ready for batch
 
-        
     }
 
 }
@@ -52,7 +53,7 @@ function mainLoop(ns: NS, targets: string[]): void {
  * @param ramAvailable: Max ram used for weakening
  * @returns Returns and object with ramUsed and fullyWeakened(boolean)
  */
-function weakenToLimit(ns: NS, ramAvailable: number, target : string): { ramUsed: number, fullyWeakened: boolean } {
+function weakenToLimit(ns: NS, ramAvailable: number, target: string): { ramUsed: number, fullyWeakened: boolean } {
 
     const WEAKEN_SCRIPT = 'batch-scripts/weakenTarget.js';
     const minSecurityLevel = ns.getServerMinSecurityLevel(target);
@@ -67,17 +68,17 @@ function weakenToLimit(ns: NS, ramAvailable: number, target : string): { ramUsed
         if (weakenThreadsNeeded < weakenThreadsAvailable) {
             const ramUsed = weakenRamCost * weakenThreadsNeeded;
             const pid = ns.exec(WEAKEN_SCRIPT, 'home', weakenThreadsNeeded);
-            if (pid === 0) { ns.print("ERROR: Could not spawn scripts."); return { ramUsed: 0, fullyWeakened: false };}
-            return {ramUsed, fullyWeakened : true};
+            if (pid === 0) { ns.print("ERROR: Could not spawn scripts."); return { ramUsed: 0, fullyWeakened: false }; }
+            return { ramUsed, fullyWeakened: true };
         }
         const ramUsed = weakenRamCost * weakenThreadsAvailable;
         const pid = ns.exec(WEAKEN_SCRIPT, 'home', weakenThreadsNeeded);
-        if (pid === 0) { ns.print("ERROR: Could not spawn scripts."); return { ramUsed: 0, fullyWeakened: false };}
-        return {ramUsed, fullyWeakened : false};
+        if (pid === 0) { ns.print("ERROR: Could not spawn scripts."); return { ramUsed: 0, fullyWeakened: false }; }
+        return { ramUsed, fullyWeakened: false };
     }
-    
+
     //Server already full weakened
-    return { ramUsed : 0, fullyWeakened : true};
+    return { ramUsed: 0, fullyWeakened: true };
 }
 
 /**
@@ -90,29 +91,29 @@ function weakenToLimit(ns: NS, ramAvailable: number, target : string): { ramUsed
  * @param ramAvailable: Max ram used for weakening
  * @returns Returns and object with ramUsed and fullyGrown(boolean)
  */
-function growToLimit(ns: NS, ramAvailable: number, target : string): { ramUsed: number, fullyGrown: boolean } {
+function growToLimit(ns: NS, ramAvailable: number, target: string): { ramUsed: number, fullyGrown: boolean } {
 
     const GROW_SCRIPT = 'batch-scripts/growTarget.js';
     const growScriptCost = ns.getScriptRam(GROW_SCRIPT, 'home');
 
     if (ns.getServerMoneyAvailable(target) === ns.getServerMaxMoney(target)) {
         //Server already fully grown
-        return { ramUsed:0, fullyGrown:true };
+        return { ramUsed: 0, fullyGrown: true };
     }
 
     const hostServer = ns.getHostname();
     const homeCores = ns.getServer(hostServer).cpuCores;
-    const maxGrowthFactor = ns.getServerMaxMoney(target)/ns.getServerMoneyAvailable(target);
+    const maxGrowthFactor = ns.getServerMaxMoney(target) / ns.getServerMoneyAvailable(target);
     const growthThreadsWanted = ns.growthAnalyze(target, maxGrowthFactor, homeCores);
     const growthThreadsAvailable = util.getThreadsAvailable(ramAvailable, growScriptCost);
 
     const threadsToUse = Math.min(growthThreadsAvailable, growthThreadsWanted)
-    const pid = ns.exec(GROW_SCRIPT, 'home',threadsToUse );
+    const pid = ns.exec(GROW_SCRIPT, 'home', threadsToUse);
 
-    if (pid === 0) { ns.print("ERROR: Could not spawn scripts."); return { ramUsed: 0, fullyGrown: false };}
+    if (pid === 0) { ns.print("ERROR: Could not spawn scripts."); return { ramUsed: 0, fullyGrown: false }; }
 
     const ramUsed = growScriptCost * threadsToUse;
-    return { ramUsed: ramUsed, fullyGrown : growthThreadsWanted === threadsToUse };
+    return { ramUsed: ramUsed, fullyGrown: growthThreadsWanted === threadsToUse };
 
 
 }

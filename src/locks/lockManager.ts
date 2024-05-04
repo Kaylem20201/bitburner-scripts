@@ -76,7 +76,7 @@ async function grantWriteLock(ns: NS, request: LockRequest) {
     request.fufilled = true;
     while (!ns.tryWritePort(port, request)) {
         ns.tprint("Lock Return port full, check logs");
-        ns.sleep(10000);
+        await ns.sleep(10000);
     };
     return;
 }
@@ -159,7 +159,7 @@ async function unlock(ns: NS, request: LockRequest) {
     request.fufilled = true;
     while (!ns.tryWritePort(port, request)) {
         ns.tprint("Lock Return port full, check logs");
-        ns.sleep(10000);
+        await ns.sleep(10000);
     };
     return;
 

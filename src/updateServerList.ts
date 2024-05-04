@@ -1,5 +1,5 @@
 import { NS } from "@ns";
-import { SERVER_LIST } from "./constantDefinitions";
+import { TARGET_SERVER_LIST } from "./constantDefinitions";
 
 // Flags:
 // -t {hostname} : Only update the target server.
@@ -12,6 +12,14 @@ export async function main(ns: NS): Promise<void> {
     }
 
 }
+
+/**
+ * only updates the listing for the target server
+ * If the server list hasnt been created yet, create the whole list first
+ * @param {NS} ns - ns namespace
+ * @param {target} string - name of target server
+ */
+function updateTargetServer
 
 /**
  * returns a list of all server names

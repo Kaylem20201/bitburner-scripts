@@ -3,6 +3,7 @@ import { HWGWThreads } from "batch-scripts/interfaces";
 
 export async function main(ns: NS): Promise<void> {
 
+    const servers = 
 }
 
 /**
@@ -27,9 +28,9 @@ export function threadsNeededForMaxMoney(ns: NS, target: string, hostname?: stri
 
     return {
         hackThreads,
-        weaken1Threads,
+        weakenCounteringHackThreads: weaken1Threads,
         growThreads,
-        weaken2Threads
+        weakenCounteringGrowThreads: weaken2Threads
     };
 
 }

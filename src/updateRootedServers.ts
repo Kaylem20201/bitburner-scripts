@@ -1,5 +1,7 @@
 export async function main(ns: NS): Promise<void> {
 
+
+
     if (!ns.hasRootAccess(server)) {
         const cracks = getListOfCracks();
         const portsNeeded = ns.getServerNumPortsRequired(server);
