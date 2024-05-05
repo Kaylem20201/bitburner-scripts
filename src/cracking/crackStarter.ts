@@ -23,6 +23,7 @@ async function createTargetServerFile(ns: NS) {
 		let nsServerInfo = ns.getServer(hostname);
 		if (nsServerInfo.purchasedByPlayer) continue;
 		let newServerEntry = generateTargetServerEntry(ns, nsServerInfo);
+		serverTable[hostname] = newServerEntry;
 	}
 
 	const pid = ns.pid;
@@ -53,7 +54,7 @@ function getAllHostnames(ns: NS) {
 	return servers;
 }
 
-function generateTargetServerEntry(ns: NS, nsServer: Server) {
+function generateTargetServerEntry(ns: NS, nsServer: Server): TargetServer {
 	const hostname = nsServer.hostname;
 	const isCracked = nsServer.hasAdminRights;
 	const isBackdoored = nsServer.backdoorInstalled;
@@ -64,6 +65,7 @@ function generateTargetServerEntry(ns: NS, nsServer: Server) {
 		isBackdoored,
 		isPreparedForBatch,
 	};
+	return newServerEntry;
 }
 
 function checkIfPrepared(ns: NS, nsServer: Server) {
