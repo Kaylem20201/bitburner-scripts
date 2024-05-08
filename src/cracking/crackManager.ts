@@ -2,7 +2,7 @@ import { NS, Server } from "@ns";
 import { TargetServer, TargetServerTable } from "cracking/interfaces";
 import { TARGET_SERVER_LIST } from "/constantDefinitions";
 import { Lock } from "/locks/interfaces";
-import { getReadLock, unlock } from "/locks/locks";
+import { getReadLock, unlock, upgrade } from "/locks/locks";
 
 export async function main(ns: NS): Promise<void> {
 
@@ -28,6 +28,10 @@ export async function main(ns: NS): Promise<void> {
 			if (!crackResult) continue;
 			server.isCracked = true;
 		}
+
+		const writeLock = upgrade(ns, readLock);
+		if (writeLock === undefined) ns.exit();
+		ns.write(TARGET_SERVER_LIST, JSON.stringify(serverListTable), 'w');
 
 		const unlockConfirm = unlock(ns, readLock);
 		unlockConfirm.catch(ns.exit);
