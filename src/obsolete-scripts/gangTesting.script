@@ -1,7 +1,0 @@
-var gmNames = gang.getMemberNames();
-
-var gm = gang.getMemberInformation(gmNames[0]);
-
-print("hack_exp: " + gm.hack_exp);
-print("hack_asc_mult:" + gm.hack_asc_mult);
-print("hack_asc_points: " + gm.hack_asc_points);

@@ -1,6 +1,0 @@
-/* run with newly rooted server as arg */
-await scp("runOnServer.script", "home", args[0]);
-
-var threadsAvailable;
-threadsAvailable = Math.floor((getServerMaxRam(args[0])-getServerUsedRam(args[0]))/getScriptRam("runOnServer.script"));
-exec("runOnServer.script", args[0], threadsAvailable);
