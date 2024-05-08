@@ -1,61 +1,40 @@
 import { NS, Server } from "@ns";
-import { TargetServer } from "cracking/interfaces";
-// import { BATCH_CALCULATIONS_PORT, GROW_SCRIPT, HACK_SCRIPT, HACK_THREADS_PER_WEAKEN_THREAD, WEAKEN_SCRIPT } from "constantDefinitions";
-// import { WEAKEN_THREADS_PER_GROW_THREAD } from "constantDefinitions";
-// import { HWGWThreads } from "/batch-scripts/interfaces";
+import { TargetServer, TargetServerTable } from "cracking/interfaces";
+import { TARGET_SERVER_LIST } from "/constantDefinitions";
+import { Lock } from "/locks/interfaces";
+import { getReadLock, unlock } from "/locks/locks";
 
 export async function main(ns: NS): Promise<void> {
 
-
-
 	//Main loop
 	while (true) {
-		for (const hostname of hostnames) {
-			if (!ns.hasRootAccess(hostname)) {
-				const cracks = getListOfCracks(ns);
-				const portsNeeded = ns.getServerNumPortsRequired(hostname);
-				if (cracks.length < portsNeeded) {
-					continue;
-				}
-				//Nuke the server
-				const res = await crackAndNukeServer(ns, cracks, hostname, portsNeeded);
-				if (!res) ns.exit();
-				ns.print("Access granted on ", hostname);
+		const player = ns.getPlayer();
+		const readLock: Lock | undefined = await getReadLock(ns, ns.pid, TARGET_SERVER_LIST);
+		if (readLock === undefined) ns.exit();
+		const serverListTable: TargetServerTable = JSON.parse(ns.read(TARGET_SERVER_LIST));
 
-			}
-			else {
-			}
+		const serverList = serverListTable.servers;
+
+		//Check for servers that are crackable and not yet cracked
+		for (let server of serverList) {
+			if (server.isCracked) continue;
+			if (server.maxMoney === 0) continue;
+			const reqLevel = server.reqHackingLevel;
+			if (reqLevel > player.skills.hacking) continue;
+			const reqPorts = server.reqPorts;
+			const cracks = getListOfCracks(ns);
+			if (reqPorts > cracks.length) continue;
+			const crackResult = crackAndNukeServer(ns, cracks, server.hostname, reqPorts);
+			if (!crackResult) continue;
+			server.isCracked = true;
 		}
-		await ns.sleep(5000);
-	}
-}
 
-// async function calculateBatchMoneyPerGBRam(ns: NS, nsServer: Server, cores: number = 1): Promise<number | undefined> {
-// 	// TODO: 
-// 	// Get ratio of HWGW threads
-// 	// Calculate Ram used
-// 	// Calculate Money from number of hack threads
-// 	// Divide
-//
-// 	const ourPID = ns.pid;
-// 	const hackPercent = 1; //100%
-// 	ns.exec("batch-scripts/calculateHWGWThreads.js", 'home', 1, ourPID, JSON.stringify(nsServer), hackPercent);
-//
-// 	while (ns.peek(BATCH_CALCULATIONS_PORT).requestorPID !== ourPID) {
-// 		ns.nextPortWrite(BATCH_CALCULATIONS_PORT);
-// 	}
-//
-// 	const returnObject = ns.readPort(BATCH_CALCULATIONS_PORT);
-// 	if (returnObject.fufilled === undefined) return undefined;
-// 	const threads: HWGWThreads = returnObject.HWGWThreads;
-//
-// 	const hackRam = ns.getScriptRam(HACK_SCRIPT);
-// 	const weakenRam = ns.getScriptRam(WEAKEN_SCRIPT);
-// 	const growRam = ns.getScriptRam(GROW_SCRIPT);
-//
-//
-//
-// }
+		const unlockConfirm = unlock(ns, readLock);
+		unlockConfirm.catch(ns.exit);
+		await ns.sleep(1000);
+	}
+
+}
 
 /**
  * 

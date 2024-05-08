@@ -17,13 +17,13 @@ async function createTargetServerFile(ns: NS) {
 	const hostnames: string[] = getAllHostnames(ns);
 	ns.print(hostnames);
 
-	const serverTable: TargetServerTable = {};
+	const serverTable: TargetServerTable = { servers: [] };
 	for (let hostname of hostnames) {
 		if (hostname === 'home') continue;
 		let nsServerInfo = ns.getServer(hostname);
 		if (nsServerInfo.purchasedByPlayer) continue;
 		let newServerEntry = generateTargetServerEntry(ns, nsServerInfo);
-		serverTable[hostname] = newServerEntry;
+		serverTable.servers.push(newServerEntry);
 	}
 
 	const pid = ns.pid;
@@ -59,11 +59,21 @@ function generateTargetServerEntry(ns: NS, nsServer: Server): TargetServer {
 	const isCracked = nsServer.hasAdminRights;
 	const isBackdoored = nsServer.backdoorInstalled;
 	const isPreparedForBatch = checkIfPrepared(ns, nsServer);
+	let reqPorts = nsServer.numOpenPortsRequired;
+	if (reqPorts === undefined) reqPorts = 5;
+	let reqHackingLevel = nsServer.requiredHackingSkill;
+	if (reqHackingLevel === undefined) reqHackingLevel = 1;
+	let maxMoney = nsServer.moneyMax;
+	if (maxMoney === undefined) maxMoney = 0;
+
 	let newServerEntry: TargetServer = {
 		hostname,
 		isCracked,
 		isBackdoored,
 		isPreparedForBatch,
+		reqPorts,
+		reqHackingLevel,
+		maxMoney
 	};
 	return newServerEntry;
 }

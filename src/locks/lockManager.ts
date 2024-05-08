@@ -54,6 +54,10 @@ async function handleRequests(ns: NS) {
             //Can fufill read lock request
             await grantReadLock(ns, request);
         }
+        if (request.lockType === "upgrade") {
+            await upgrade(ns, request);
+            continue;
+        }
         //invalid request
         request.fufilled = false;
     }
@@ -117,6 +121,7 @@ async function unlock(ns: NS, request: LockRequest) {
     if (lockType !== 'read' && lockType !== 'write') {
         request.denyReason = "LockType field invalid, should be 'write' or 'read'";
         request.fufilled = false;
+        await writeOut();
         return;
     }
 
@@ -125,11 +130,13 @@ async function unlock(ns: NS, request: LockRequest) {
         if (lock === undefined) {
             request.denyReason = "No write locks for filename";
             request.fufilled = false;
+            await writeOut();
             return;
         }
         if (lock.requestorPID !== requestor) {
             request.denyReason = "Requestor doesn't have lock";
             request.fufilled = false;
+            await writeOut();
             return;
         }
         writeLocks.delete(filename);
@@ -140,6 +147,7 @@ async function unlock(ns: NS, request: LockRequest) {
         if (fileLocks === undefined) {
             request.denyReason = "File has no locks";
             request.fufilled = false;
+            await writeOut();
             return;
         }
         const lockIndex = fileLocks.findIndex((readLock) => {
@@ -149,18 +157,90 @@ async function unlock(ns: NS, request: LockRequest) {
         if (lockIndex === undefined) {
             request.denyReason = "Requestor doesn't have lock";
             request.fufilled = false;
+            await writeOut();
             return;
         }
         fileLocks.splice(lockIndex, 1);
         if (fileLocks.length === 0) readLocks.delete(filename);
     }
 
+    await writeOut();
+    return;
+
+    async function writeOut() {
+        const port = LOCK_RETURN_PORT;
+        request.fufilled = true;
+        while (!ns.tryWritePort(port, request)) {
+            ns.tprint("Lock Return port full, check logs");
+            await ns.sleep(10000);
+        };
+        return;
+    }
+
+}
+
+async function upgrade(ns: NS, request: LockRequest) {
+    const filename = request.filename;
+    const requestor = request.requestorPID;
+    const lockType = request.lockType;
+    const givenLock = request.upgradeLock;
+
+    if (givenLock === undefined) {
+        request.denyReason = "Must pass your read lock as 'upgradeLock'";
+        request.fufilled = false;
+        await writeOut();
+        return;
+    }
+    if (givenLock.lockType !== 'read') {
+        request.denyReason = "Passed lock is not a read lock";
+        request.fufilled = false;
+        await writeOut();
+        return;
+    }
+
+    //Release read lock
+    const fileLocks = readLocks.get(filename);
+    if (fileLocks === undefined) {
+        request.denyReason = "File has no locks";
+        request.fufilled = false;
+        await writeOut();
+        return;
+    }
+    const lockIndex = fileLocks.findIndex((readLock) => {
+        if (readLock.requestorPID === requestor) return true;
+        return false;
+    });
+    if (lockIndex === undefined) {
+        request.denyReason = "Requestor doesn't have lock";
+        request.fufilled = false;
+        await writeOut();
+        return;
+    }
+    fileLocks.splice(lockIndex, 1);
+    if (fileLocks.length === 0) readLocks.delete(filename);
+
+    const newLock: Lock = {
+        requestorPID: request.requestorPID,
+        filename: filename,
+        lockType: 'write'
+    }
+    writeLocks.set(filename, newLock);
     const port = LOCK_RETURN_PORT;
     request.fufilled = true;
     while (!ns.tryWritePort(port, request)) {
         ns.tprint("Lock Return port full, check logs");
         await ns.sleep(10000);
     };
+    await writeOut();
     return;
 
+    async function writeOut() {
+        const port = LOCK_RETURN_PORT;
+        request.fufilled = true;
+        while (!ns.tryWritePort(port, request)) {
+            ns.tprint("Lock Return port full, check logs");
+            await ns.sleep(10000);
+        };
+        return;
+    }
 }

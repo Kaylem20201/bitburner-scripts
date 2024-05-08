@@ -126,3 +126,49 @@ export async function unlock(ns: NS, lock: Lock): Promise<boolean> {
 
     }
 }
+
+export async function upgrade(ns: NS, lock: Lock): Promise<Lock | undefined> {
+    const filename = lock.filename;
+    const pid = lock.requestorPID;
+    const lockType = 'upgrade';
+    const newUnlockRequest: LockRequest = {
+        lockOrUnlock: 'lock',
+        requestorPID: pid,
+        filename: filename,
+        lockType: lockType,
+        upgradeLock: lock
+    };
+    while (!ns.tryWritePort(LOCK_REQUEST_PORT, newUnlockRequest)) { await ns.sleep(200); }
+
+    while (true) {
+        const portData: LockRequest | string = ns.peek(LOCK_RETURN_PORT);
+
+        //Check if its our request
+        if (portData === "NULL PORT DATA" || typeof (portData) === 'string') {
+            await ns.sleep(200);
+            continue;
+        }
+        if (portData.filename !== filename
+            || portData.requestorPID !== pid
+            || portData.lockType !== 'read') {
+            await ns.sleep(200);
+            continue;
+        }
+
+        ns.readPort(LOCK_RETURN_PORT);
+
+        if (portData.fufilled === false) {
+            ns.tprint(portData.denyReason);
+            ns.print(portData.denyReason);
+            return undefined;
+        }
+
+        const newLock: Lock = {
+            requestorPID: pid,
+            filename: filename,
+            lockType: 'write'
+        };
+        return newLock;
+
+    }
+}

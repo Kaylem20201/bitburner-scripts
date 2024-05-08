@@ -5,6 +5,7 @@ export interface LockRequest {
     lockType: string,
     fufilled?: boolean,
     denyReason?: string
+    upgradeLock?: Lock
 }
 
 export interface Lock {
