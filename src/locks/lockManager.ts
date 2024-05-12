@@ -9,6 +9,9 @@ let readLocks: Map<string, Lock[]> = new Map<string, Lock[]>;
 let writeLocks: Map<string, Lock> = new Map<string, Lock>;
 
 export async function main(ns: NS): Promise<void> {
+    ns.clearPort(LOCK_REQUEST_PORT);
+    ns.clearPort(LOCK_RETURN_PORT);
+
     while (true) {
         while (ns.peek(LOCK_REQUEST_PORT) !== "NULL PORT DATA") {
             const nextLockRequest: LockRequest = ns.readPort(LOCK_REQUEST_PORT);

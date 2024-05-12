@@ -64,7 +64,7 @@ export async function getWriteLock(ns: NS, pid: number, filename: string): Promi
         }
         if (portData.filename !== filename
             || portData.requestorPID !== pid
-            || portData.lockType !== 'read') {
+            || portData.lockType !== 'write') {
             await ns.sleep(200);
             continue;
         }
