@@ -6,7 +6,7 @@ import { getWriteLock, unlock } from "/locks/locks";
 
 export async function main(ns: NS): Promise<void> {
 
-	createTargetServerFile(ns);
+	await createTargetServerFile(ns);
 
 	ns.spawn("cracking/crackManager.js");
 

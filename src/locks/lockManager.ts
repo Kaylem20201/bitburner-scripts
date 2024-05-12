@@ -15,11 +15,13 @@ export async function main(ns: NS): Promise<void> {
             //new requests should always have an undefined value for 'fufilled'
             nextLockRequest.fufilled = undefined;
             currentRequests.push(nextLockRequest);
+            await ns.sleep(1);
         }
 
         await handleRequests(ns);
 
-        if (ns.peek(LOCK_REQUEST_PORT) !== "NULL PORT DATA") await ns.nextPortWrite(1);
+        if (ns.peek(LOCK_REQUEST_PORT) !== "NULL PORT DATA") await ns.nextPortWrite(LOCK_REQUEST_PORT);
+        await ns.sleep(100);
     }
 }
 
@@ -34,6 +36,8 @@ async function handleRequests(ns: NS) {
             //invalid request
             request.denyReason = "lockOrUnlock field invalid, should be 'lock' or 'unlock'";
             request.fufilled = false;
+            await writeOut(ns, request);
+            continue;
         }
         if (writeLocks.has(filename)) {
             //Write lock already taken
@@ -60,12 +64,14 @@ async function handleRequests(ns: NS) {
         }
         //invalid request
         request.fufilled = false;
+        await writeOut(ns, request);
     }
     //Remove fufilled/denied entries
     currentRequests = currentRequests.filter((request) => {
         if (request.fufilled === undefined) return true;
         return false;
     });
+
 }
 
 async function grantWriteLock(ns: NS, request: LockRequest) {
@@ -76,12 +82,7 @@ async function grantWriteLock(ns: NS, request: LockRequest) {
         lockType: 'write'
     }
     writeLocks.set(reqFilename, newLock);
-    const port = LOCK_RETURN_PORT;
-    request.fufilled = true;
-    while (!ns.tryWritePort(port, request)) {
-        ns.tprint("Lock Return port full, check logs");
-        await ns.sleep(10000);
-    };
+    await writeOut(ns, request);
     return;
 }
 
@@ -103,12 +104,7 @@ async function grantReadLock(ns: NS, request: LockRequest) {
         let lockArray: Lock[] = [newLock];
         readLocks.set(reqFilename, lockArray);
     }
-    const port = LOCK_RETURN_PORT;
-    request.fufilled = true;
-    while (!ns.tryWritePort(port, request)) {
-        ns.tprint("Lock Return port full, check logs");
-        ns.sleep(10000);
-    };
+    await writeOut(ns, request);
     return;
 }
 
@@ -121,7 +117,7 @@ async function unlock(ns: NS, request: LockRequest) {
     if (lockType !== 'read' && lockType !== 'write') {
         request.denyReason = "LockType field invalid, should be 'write' or 'read'";
         request.fufilled = false;
-        await writeOut();
+        await writeOut(ns, request);
         return;
     }
 
@@ -130,13 +126,13 @@ async function unlock(ns: NS, request: LockRequest) {
         if (lock === undefined) {
             request.denyReason = "No write locks for filename";
             request.fufilled = false;
-            await writeOut();
+            await writeOut(ns, request);
             return;
         }
         if (lock.requestorPID !== requestor) {
             request.denyReason = "Requestor doesn't have lock";
             request.fufilled = false;
-            await writeOut();
+            await writeOut(ns, request);
             return;
         }
         writeLocks.delete(filename);
@@ -147,7 +143,7 @@ async function unlock(ns: NS, request: LockRequest) {
         if (fileLocks === undefined) {
             request.denyReason = "File has no locks";
             request.fufilled = false;
-            await writeOut();
+            await writeOut(ns, request);
             return;
         }
         const lockIndex = fileLocks.findIndex((readLock) => {
@@ -157,44 +153,33 @@ async function unlock(ns: NS, request: LockRequest) {
         if (lockIndex === undefined) {
             request.denyReason = "Requestor doesn't have lock";
             request.fufilled = false;
-            await writeOut();
+            await writeOut(ns, request);
             return;
         }
         fileLocks.splice(lockIndex, 1);
         if (fileLocks.length === 0) readLocks.delete(filename);
     }
 
-    await writeOut();
+    await writeOut(ns, request);
     return;
-
-    async function writeOut() {
-        const port = LOCK_RETURN_PORT;
-        request.fufilled = true;
-        while (!ns.tryWritePort(port, request)) {
-            ns.tprint("Lock Return port full, check logs");
-            await ns.sleep(10000);
-        };
-        return;
-    }
 
 }
 
 async function upgrade(ns: NS, request: LockRequest) {
     const filename = request.filename;
     const requestor = request.requestorPID;
-    const lockType = request.lockType;
     const givenLock = request.upgradeLock;
 
     if (givenLock === undefined) {
         request.denyReason = "Must pass your read lock as 'upgradeLock'";
         request.fufilled = false;
-        await writeOut();
+        await writeOut(ns, request);
         return;
     }
     if (givenLock.lockType !== 'read') {
         request.denyReason = "Passed lock is not a read lock";
         request.fufilled = false;
-        await writeOut();
+        await writeOut(ns, request);
         return;
     }
 
@@ -203,7 +188,7 @@ async function upgrade(ns: NS, request: LockRequest) {
     if (fileLocks === undefined) {
         request.denyReason = "File has no locks";
         request.fufilled = false;
-        await writeOut();
+        await writeOut(ns, request);
         return;
     }
     const lockIndex = fileLocks.findIndex((readLock) => {
@@ -213,7 +198,7 @@ async function upgrade(ns: NS, request: LockRequest) {
     if (lockIndex === undefined) {
         request.denyReason = "Requestor doesn't have lock";
         request.fufilled = false;
-        await writeOut();
+        await writeOut(ns, request);
         return;
     }
     fileLocks.splice(lockIndex, 1);
@@ -231,16 +216,17 @@ async function upgrade(ns: NS, request: LockRequest) {
         ns.tprint("Lock Return port full, check logs");
         await ns.sleep(10000);
     };
-    await writeOut();
+    await writeOut(ns, request);
     return;
 
-    async function writeOut() {
-        const port = LOCK_RETURN_PORT;
-        request.fufilled = true;
-        while (!ns.tryWritePort(port, request)) {
-            ns.tprint("Lock Return port full, check logs");
-            await ns.sleep(10000);
-        };
-        return;
-    }
+}
+
+async function writeOut(ns: NS, request: LockRequest) {
+    const port = LOCK_RETURN_PORT;
+    request.fufilled = true;
+    while (!ns.tryWritePort(port, request)) {
+        ns.tprint("Lock Return port full, check logs");
+        await ns.sleep(10000);
+    };
+    return;
 }
