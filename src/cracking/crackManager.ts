@@ -19,8 +19,6 @@ export async function main(ns: NS): Promise<void> {
 		for (let server of serverList) {
 			if (server.isCracked) continue;
 			if (server.maxMoney === 0) continue;
-			const reqLevel = server.reqHackingLevel;
-			if (reqLevel > player.skills.hacking) continue;
 			const reqPorts = server.reqPorts;
 			const cracks = getListOfCracks(ns);
 			if (reqPorts > cracks.length) continue;
