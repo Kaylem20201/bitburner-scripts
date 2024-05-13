@@ -7,5 +7,5 @@ export interface HWGWThreads {
 
 export interface HWGWTimings {
     startTimes: { time: number, type: string }[],
-    finishTimes: { time: number, type: string }[]
+    totalDuration: number
 }
