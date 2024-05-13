@@ -1,5 +1,5 @@
-import { NS, Server } from "@ns";
-import { TargetServer, TargetServerTable } from "cracking/interfaces";
+import { NS } from "@ns";
+import { TargetServerTable } from "cracking/interfaces";
 import { TARGET_SERVER_LIST } from "/constantDefinitions";
 import { Lock } from "/locks/interfaces";
 import { getReadLock, unlock, upgrade } from "/locks/locks";
@@ -8,7 +8,6 @@ export async function main(ns: NS): Promise<void> {
 
 	//Main loop
 	while (true) {
-		const player = ns.getPlayer();
 		const readLock: Lock | undefined = await getReadLock(ns, ns.pid, TARGET_SERVER_LIST);
 		if (readLock === undefined) ns.exit();
 		const serverListTable: TargetServerTable = JSON.parse(ns.read(TARGET_SERVER_LIST));
