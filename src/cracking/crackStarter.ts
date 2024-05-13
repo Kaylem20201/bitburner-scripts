@@ -3,12 +3,17 @@ import { TargetServer } from "cracking/interfaces";
 import { TargetServerTable } from "cracking/interfaces";
 import { TARGET_SERVER_LIST as TARGET_SERVER_LIST } from "/constantDefinitions";
 import { getWriteLock, unlock } from "/locks/locks";
+import { SpawnOptions } from "@ns";
 
 export async function main(ns: NS): Promise<void> {
 
 	await createTargetServerFile(ns);
 
-	ns.spawn("cracking/crackManager.js");
+	let options: SpawnOptions = {
+		preventDuplicates: true,
+		spawnDelay: 100
+	}
+	ns.spawn("cracking/crackManager.js", options);
 
 }
 

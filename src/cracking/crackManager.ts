@@ -24,17 +24,17 @@ export async function main(ns: NS): Promise<void> {
 			const reqPorts = server.reqPorts;
 			const cracks = getListOfCracks(ns);
 			if (reqPorts > cracks.length) continue;
-			const crackResult = crackAndNukeServer(ns, cracks, server.hostname, reqPorts);
+			const crackResult = await crackAndNukeServer(ns, cracks, server.hostname, reqPorts);
 			if (!crackResult) continue;
 			server.isCracked = true;
 		}
 
-		const writeLock = upgrade(ns, readLock);
+		const writeLock = await upgrade(ns, readLock);
 		if (writeLock === undefined) ns.exit();
 		ns.write(TARGET_SERVER_LIST, JSON.stringify(serverListTable), 'w');
 
-		const unlockConfirm = unlock(ns, readLock);
-		unlockConfirm.catch(ns.exit);
+		const unlockConfirm = await unlock(ns, writeLock);
+		if (!unlockConfirm) ns.exit();
 		await ns.sleep(1000);
 	}
 

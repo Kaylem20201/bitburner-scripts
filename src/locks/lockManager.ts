@@ -4,7 +4,7 @@ import { Lock } from "locks/interfaces";
 import { LOCK_REQUEST_PORT } from "constantDefinitions";
 import { LOCK_RETURN_PORT } from "constantDefinitions";
 
-let currentRequests: LockRequest[] = [];
+let currentRequests: LockRequest[] = new Array<LockRequest>;
 let readLocks: Map<string, Lock[]> = new Map<string, Lock[]>;
 let writeLocks: Map<string, Lock> = new Map<string, Lock>;
 
@@ -60,6 +60,7 @@ async function handleRequests(ns: NS) {
         if (request.lockType === "read") {
             //Can fufill read lock request
             await grantReadLock(ns, request);
+            continue;
         }
         if (request.lockType === "upgrade") {
             await upgrade(ns, request);
@@ -85,6 +86,7 @@ async function grantWriteLock(ns: NS, request: LockRequest) {
         lockType: 'write'
     }
     writeLocks.set(reqFilename, newLock);
+    request.fufilled = true;
     await writeOut(ns, request);
     return;
 }
@@ -95,7 +97,7 @@ async function grantReadLock(ns: NS, request: LockRequest) {
     const newLock: Lock = {
         requestorPID: request.requestorPID,
         filename: reqFilename,
-        lockType: 'write'
+        lockType: 'read'
     }
     const fileLockArray = readLocks.get(reqFilename);
     if (fileLockArray !== undefined) {
@@ -107,6 +109,7 @@ async function grantReadLock(ns: NS, request: LockRequest) {
         let lockArray: Lock[] = [newLock];
         readLocks.set(reqFilename, lockArray);
     }
+    request.fufilled = true;
     await writeOut(ns, request);
     return;
 }
@@ -163,6 +166,7 @@ async function unlock(ns: NS, request: LockRequest) {
         if (fileLocks.length === 0) readLocks.delete(filename);
     }
 
+    request.fufilled = true;
     await writeOut(ns, request);
     return;
 
@@ -207,18 +211,14 @@ async function upgrade(ns: NS, request: LockRequest) {
     fileLocks.splice(lockIndex, 1);
     if (fileLocks.length === 0) readLocks.delete(filename);
 
+    //create write lock
     const newLock: Lock = {
         requestorPID: request.requestorPID,
         filename: filename,
         lockType: 'write'
     }
     writeLocks.set(filename, newLock);
-    const port = LOCK_RETURN_PORT;
     request.fufilled = true;
-    while (!ns.tryWritePort(port, request)) {
-        ns.tprint("Lock Return port full, check logs");
-        await ns.sleep(10000);
-    };
     await writeOut(ns, request);
     return;
 
@@ -226,7 +226,6 @@ async function upgrade(ns: NS, request: LockRequest) {
 
 async function writeOut(ns: NS, request: LockRequest) {
     const port = LOCK_RETURN_PORT;
-    request.fufilled = true;
     while (!ns.tryWritePort(port, request)) {
         ns.tprint("Lock Return port full, check logs");
         await ns.sleep(10000);

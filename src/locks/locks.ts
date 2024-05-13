@@ -150,7 +150,7 @@ export async function upgrade(ns: NS, lock: Lock): Promise<Lock | undefined> {
         }
         if (portData.filename !== filename
             || portData.requestorPID !== pid
-            || portData.lockType !== 'read') {
+            || portData.lockType !== 'upgrade') {
             await ns.sleep(200);
             continue;
         }
