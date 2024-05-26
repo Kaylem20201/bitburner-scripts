@@ -1,14 +1,33 @@
 import { NS } from "@ns";
-import { HWGWThreads } from "./interfaces";
-import { HWGWTimings } from "./interfaces";
+import { calculateHWGWThreads, calculateHWGWTimings } from "batch-scripts/batchCalculationFunctions";
+import { HWGWThreads } from "batch-scripts/interfaces";
+import { HWGWTimings } from "batch-scripts/interfaces";
 import { HACK_SCRIPT, SCRIPT_GAP } from "/constantDefinitions";
 import { WEAKEN_SCRIPT } from "/constantDefinitions";
 import { GROW_SCRIPT } from "/constantDefinitions";
 
+let debug = false;
+
 export async function main(ns: NS): Promise<void> {
 
-    if (ns.args.length < 3) throw new Error("Malformed arguments");
     if (typeof ns.args[0] !== 'string') throw new Error("Incorrect 'target' parameter");
+    const target = ns.args[0];
+
+    if (ns.args.includes("--debug")) debug = true;
+
+    if (ns.args.includes("--max")) {
+        const server = ns.getServer(target);
+        const cores = ns.getServer('home').cpuCores;
+        const threads = await calculateHWGWThreads(ns, ns.pid, server, 1.0, cores);
+        if (threads === undefined) throw new Error();
+        const timings = await calculateHWGWTimings(ns, ns.pid, server);
+        if (timings === undefined) throw new Error();
+
+        await batchLoop(ns, target, threads, timings, 'home');
+
+        return;
+    }
+
     if (typeof ns.args[1] !== 'string') throw new Error("Incorrect 'threadsObject' parameter");
     if (typeof ns.args[2] !== 'string') throw new Error("Incorrect 'timings' parameter");
     let hostname = 'home';
@@ -16,7 +35,6 @@ export async function main(ns: NS): Promise<void> {
         if (typeof ns.args[3] !== 'string') throw new Error("Incorrect 'hostname' parameter");
         hostname = ns.args[3];
     }
-    const target = ns.args[0];
     const threadsObject = JSON.parse(ns.args[1]);
     const timings = JSON.parse(ns.args[2]);
 
