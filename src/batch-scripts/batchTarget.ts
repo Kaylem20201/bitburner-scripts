@@ -1,7 +1,7 @@
 import { NS } from "@ns";
 import { HWGWThreads } from "./interfaces";
 import { HWGWTimings } from "./interfaces";
-import { HACK_SCRIPT } from "/constantDefinitions";
+import { HACK_SCRIPT, SCRIPT_GAP } from "/constantDefinitions";
 import { WEAKEN_SCRIPT } from "/constantDefinitions";
 import { GROW_SCRIPT } from "/constantDefinitions";
 
@@ -20,7 +20,14 @@ export async function main(ns: NS): Promise<void> {
     const threadsObject = JSON.parse(ns.args[1]);
     const timings = JSON.parse(ns.args[2]);
 
-    await runBatchOnServer(ns, target, threadsObject, timings, hostname);
+}
+
+async function batchLoop(ns: NS, target: string, threadsObject: HWGWThreads, timings: HWGWTimings, hostname?: string): Promise<void> {
+
+    while (true) {
+        await runBatchOnServer(ns, target, threadsObject, timings, hostname);
+        await ns.sleep(SCRIPT_GAP);
+    }
 
 }
 
@@ -30,7 +37,6 @@ export async function main(ns: NS): Promise<void> {
  * @param target Target server
  * @param threadsObject HWGWThreads object with threads defined for batch ops
  * @param hostname Optional param for server to host batch operations on
- * @returns Milliseconds it takes for operations to complete
  */
 async function runBatchOnServer(ns: NS, target: string, threadsObject: HWGWThreads, timings: HWGWTimings, hostname?: string): Promise<void> {
 
